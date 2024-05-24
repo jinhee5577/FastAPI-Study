@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast API TEST</title>
+</head>
+<body>
+    <form action="http://127.0.0.1:8000/posts/new" method="post">
+        <table>
+            <tr>
+                <td>title : <input type="text" name="title" ></td>
+            </tr>
+            <tr>
+                <td>content : <input type="text" name="content" ></td>
+            </tr>
+            <tr>
+                <td>published : <input type="hidden" name="published" value="True" ></td>
+            </tr>
+            <tr>
+                <td>rating : <input type="number" name="rating" ></td>
+            </tr>
+            <tr>
+                <td>보내보자 : <input type="submit" value="보내기" ></td>
+            </tr>
+        </table>
+
+    </form>
+
+
+</body>
+</html>
