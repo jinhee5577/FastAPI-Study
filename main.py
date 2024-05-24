@@ -86,7 +86,6 @@ def get_post(post_id : int):
 @app.post("/posts/new")
 def create_post(post: Post):
     print(post)
-    post.json()
     post_id = len(posts)+1
     posts[post_id] = post.dict() # 딕셔너리로 바까서 추가해준다.
     return {"post_id": post_id, **post.dict()}  # ** 는 JS의 전개 연산자와 같은기능 같다.
