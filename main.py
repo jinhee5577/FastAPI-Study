@@ -1,18 +1,84 @@
 from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse # json 형식으로 데이터 전달
 from typing import Union
 from fastapi.responses import FileResponse
 # html파일같은거 전송해주고 싶을때 요거 improt 해야함.
 
+from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
+import io
+import torch
+from torchvision import transforms
+from ultralytics import YOLO
+from pydantic import BaseModel
+
 # 나중에 요기위에다 DB접속해 주세요~~ 코드 넣어라.
 
 app = FastAPI()
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 # "/" 로 접속했을시
 @app.get('/')
 def home() :
     return "JINI HI!"
+
+
+
+############### 모델 코드 테스트
+
+# 그래서 clas 생성해줌.
+class SelectModel(BaseModel):
+    # 데이터 타입 정의
+    model : str
+
+
+async def runYoloModel (file: UploadFile = File(...)):
+     try:
+        # YOLO 모델 로드
+        model = YOLO(r'.\best.pt')
+        model.predict(r'.\images\E3S690_20221011_02830841_M_Bullet_005-008_Cable_575-063_2.png', device='0',save=True,conf=0.5)  # 실시간분석에서 날아온 이미지가 여기 들어가야한다.
+        image_bytes = await file.read()
+       # outputs = get_prediction(image_bytes)
+        # return JSONResponse(content={"predictions": outputs})
+        return "test"
+     except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+    
+
+@app.post("/receive_model")
+async def predict(Model : SelectModel = Depends()):
+    print(Model.model)
+    runYoloModel()
+
+
+#  실시간분석에서 날아온 이미지분석
+@app.get("/analyze")
+async def imgAnalyze() :
+    # print(img)
+    try:
+        # YOLO 모델 로드
+        model = YOLO(r'.\best.pt')
+        model.predict('./images/E3S690_20221011_02830841_M_Bullet_005-008_Cable_575-063_2.png', device='0',save=True,conf=0.5)  # 실시간분석에서 날아온 이미지가 여기 들어가야한다.
+        # image_bytes = await file.read()
+        # outputs = get_prediction(image_bytes)
+        # return JSONResponse(content={"predictions": outputs})
+        return "test"
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
 
 
 # "/index" 로 접속했을시 html파일 전송함.
@@ -91,6 +157,15 @@ def create_post(post: Post):
     return {"post_id": post_id, **post.dict()}  # ** 는 JS의 전개 연산자와 같은기능 같다.
 
 
+# 글수정
+@app.put("/posts/{post_id}")
+def update_post(post_id: int, updated_post: Post):
+    if post_id not in posts:
+        raise HTTPException(status_code=404, detail="Post not found")
+    posts[post_id] = updated_post.dict()
+    return {"post_id": post_id, **updated_post.dict()}
+
+
 
 # db에서 데이터 꺼내오고 싶을때
 @app.get('/getdb')
@@ -99,3 +174,64 @@ async def home() :
    # await ~~~~
     # 이안에서 db에서 데이터 꺼내주세요~~ 등 db입출력 코드 작성.
     return "JINI HI!"
+
+
+
+# 그래서 clas 생성해줌.
+class SendToFastApiDto(BaseModel):
+    # 데이터 타입 정의
+    nickname : str
+    fileId : str
+
+
+# Spring 과 FastAPI 통신 테스트
+# !! 주의 경로는 위에 Spring에서 적은 경로와 같아야함 !!
+@app.post('/receive_string')
+async def receive_string(requestDto: SendToFastApiDto) :
+    print(requestDto)
+    
+    #Spring으로부터 JSON 객체를 전달받음
+    dto_json = requestDto
+	
+   	#Spring에서 받은 데이터를 출력해서 확인
+   # print(dto_json)
+    
+    #Spring으로 response 전달
+    return "jini"
+
+
+
+@app.post('/receive_string')
+async def receive_string(requestDto: SendToFastApiDto) :
+    print(requestDto)
+    
+    #Spring으로부터 JSON 객체를 전달받음
+    dto_json = requestDto
+	
+   	#Spring에서 받은 데이터를 출력해서 확인
+   # print(dto_json)
+    
+    #Spring으로 response 전달
+    return "jini"
+
+
+@app.post('/gospring')
+async def gospring(requestDto: SendToFastApiDto) :
+    print(requestDto)
+    
+    #Spring으로부터 JSON 객체를 전달받음
+    dto_json = requestDto
+	
+   	#Spring에서 받은 데이터를 출력해서 확인
+   # print(dto_json)
+    
+    #Spring으로 response 전달
+    return "test ok"
+
+
+# 서버 시작 명령
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
