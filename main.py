@@ -12,6 +12,8 @@ import torch
 from torchvision import transforms
 from ultralytics import YOLO
 from pydantic import BaseModel
+import shutil
+
 
 # 나중에 요기위에다 DB접속해 주세요~~ 코드 넣어라.
 
@@ -43,40 +45,50 @@ class SelectModel(BaseModel):
     model : str
 
 
-async def runYoloModel (file: UploadFile = File(...)):
-     try:
-        # YOLO 모델 로드
-        model = YOLO(r'.\best.pt')
-        model.predict(r'.\images\E3S690_20221011_02830841_M_Bullet_005-008_Cable_575-063_2.png', device='0',save=True,conf=0.5)  # 실시간분석에서 날아온 이미지가 여기 들어가야한다.
-        image_bytes = await file.read()
-       # outputs = get_prediction(image_bytes)
-        # return JSONResponse(content={"predictions": outputs})
-        return "test"
-     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+# async def runYoloModel (file: UploadFile = File(...)):
+#      try:
+#         # YOLO 모델 로드
+#         model = YOLO(r'.\best.pt')
+#         model.predict(r'.\images\E3S690_20221011_02830841_M_Bullet_005-008_Cable_575-063_2.png', device='0',save=True,conf=0.5)  # 실시간분석에서 날아온 이미지가 여기 들어가야한다.
+#         image_bytes = await file.read()
+#        # outputs = get_prediction(image_bytes)
+#         # return JSONResponse(content={"predictions": outputs})
+#         return "test"
+#      except Exception as e:
+#         return JSONResponse(content={"error": str(e)}, status_code=500)
 
     
 
 @app.post("/receive_model")
 async def predict(Model : SelectModel = Depends()):
     print(Model.model)
-    runYoloModel()
+    # runYoloModel()
 
+
+# 그래서 clas 생성해줌.
+class DetectImg(BaseModel):
+    # 데이터 타입 정의
+    file : str
 
 #  실시간분석에서 날아온 이미지분석
-@app.get("/analyze")
-async def imgAnalyze() :
-    # print(img)
+@app.post("/analyze")
+async def imgAnalyze(file: UploadFile = File(...)) :
+
     try:
+        with open(f"uploaded_{file.filename}", "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
         # YOLO 모델 로드
-        model = YOLO(r'.\best.pt')
-        model.predict('./images/E3S690_20221011_02830841_M_Bullet_005-008_Cable_575-063_2.png', device='0',save=True,conf=0.5)  # 실시간분석에서 날아온 이미지가 여기 들어가야한다.
+        # model = YOLO('./best.pt')
+        # model.predict(file.filename, device='0',save=True,conf=0.5)  # 실시간분석에서 날아온 이미지가 여기 들어가야한다.
         # image_bytes = await file.read()
-        # outputs = get_prediction(image_bytes)
-        # return JSONResponse(content={"predictions": outputs})
-        return "test"
+        # # outputs = get_prediction(image_bytes)
+        # # return JSONResponse(content={"predictions": outputs})
+        return JSONResponse(content={"filename": file.filename}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+   #  return Dimg.detectImg
+
+     
 
 
 
